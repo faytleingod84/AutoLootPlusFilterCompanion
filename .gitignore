@@ -1,0 +1,27 @@
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build / publish output
+publish/
+artifacts/
+Release/
+Debug/
+
+# WebView2 user data / cache
+*.WebView2/
+AutoLootPlusFilterCompanion.exe.WebView2/
+
+# Compiled files
+*.exe
+*.dll
+*.pdb
+
+# OS/editor noise
+Thumbs.db
+.DS_Store

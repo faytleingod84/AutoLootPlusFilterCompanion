@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto Loot Plus Filter Companion</title>
+
+
+<style>
+:root{
+ --bg:#090c10;--panel:#151b22;--panel2:#1b232c;--panel3:#0f1419;--line:#3b4652;
+ --text:#f0f3f6;--muted:#94a0ac;--gold:#e2b76b;--teal:#4ecfb2;
+ --brown:#9a6a3f;--brown2:#d1a16b;--blue:#4c82c5;--blue2:#8eb7ee;
+ --white:#e2e5ea;--white2:#b9bec6;--red:#9a4548;--green:#3e7d61;
+ --shadow:0 18px 52px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+ font:14px/1.35 "Segoe UI",Inter,Arial,sans-serif;color:var(--text);
+ background:
+ radial-gradient(circle at 15% 0%,rgba(146,95,51,.10),transparent 30%),
+ radial-gradient(circle at 84% 0%,rgba(61,104,163,.10),transparent 30%),
+ linear-gradient(180deg,#090c10,#11171d 52%,#0a0e12)
+}
+button,input{font:inherit}
+button{
+ height:38px;color:var(--text);border:1px solid #53606e;background:linear-gradient(180deg,#27313b,#1b232b);
+ border-radius:9px;padding:0 13px;cursor:pointer;transition:.14s;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+button:hover{filter:brightness(1.10);border-color:#738394}
+button:disabled{opacity:.42;cursor:not-allowed;filter:saturate(.4)}
+.btnFixed{width:128px}
+.btnSmall{width:84px}
+.langBtn{width:76px;height:34px;padding:0}
+.langBtn.active{background:linear-gradient(180deg,#4285c7,#2a6598);border-color:#86bdf1;box-shadow:0 0 16px rgba(78,143,207,.2)}
+.btnReset{width:146px;background:linear-gradient(180deg,rgba(154,69,72,.72),rgba(92,43,46,.76));border-color:#bb676a}
+.btnExport{width:204px;background:linear-gradient(180deg,rgba(62,125,97,.78),rgba(39,79,62,.84));border-color:#66a989}
+.btnSave{width:174px;background:linear-gradient(180deg,#3978af,#285d87);border-color:#72a9d8}
+.btnChoose{width:126px}.btnReload{width:102px}
+.btnTest{width:132px}
+.app{height:100%;display:grid;grid-template-rows:108px 56px 1fr 66px}
+.top{
+ position:relative;display:flex;align-items:center;gap:14px;padding:0 18px;overflow:hidden;
+ border-bottom:1px solid #665136;
+ background:#10161c url("assets/header_panorama.png") center/cover no-repeat;
+ box-shadow:0 8px 30px rgba(0,0,0,.22)
+}
+.top:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,13,18,.98) 0%,rgba(10,16,22,.87) 43%,rgba(10,16,22,.45) 72%,rgba(8,12,16,.78) 100%)}
+.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#b5844c,transparent)}
+.top>*{position:relative;z-index:1}
+.logo{display:flex;align-items:center;gap:14px}
+.logoMark{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#a7774c,#5d432c);border:1px solid #aa7a48;display:grid;place-items:center;font-weight:900;color:#fff0cf;box-shadow:0 0 20px rgba(176,124,70,.15)}
+.brand{font-family:Georgia,"Times New Roman",serif;font-weight:900;font-size:23px;letter-spacing:.035em;text-transform:uppercase;text-shadow:0 2px 10px rgba(0,0,0,.55)}
+.brand b{color:#e4ae63}
+.sub{font-size:11px;color:#b5c0c9;margin-top:2px}
+.spacer{flex:1}.topActions{display:flex;gap:8px;align-items:center}
+.pathbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#11171d;border-bottom:1px solid #2d3741}
+.path{flex:1;color:#c3ccd4;background:#0c1116;border:1px solid #384654;border-radius:9px;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.statusChip{height:34px;display:flex;align-items:center;padding:0 12px;border:1px solid #755a35;background:#1b1712;color:#e4b96f;border-radius:99px;font-size:11px;white-space:nowrap}
+.workspace{display:grid;grid-template-columns:350px minmax(570px,1fr) 275px;gap:12px;padding:12px;min-height:0}
+.panel{min-height:0;border:1px solid #3a4551;border-radius:13px;background:linear-gradient(180deg,rgba(25,32,39,.985),rgba(17,22,28,.985));box-shadow:inset 0 1px 0 rgba(255,255,255,.025),var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.ph{height:45px;display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;background:linear-gradient(180deg,#202832,#171e25);border-bottom:1px solid #303b46}
+.ph .mini{margin-left:auto;color:var(--muted);font-weight:600;letter-spacing:0;text-transform:none}
+.scroll{overflow:auto;min-height:0;flex:1}
+.scroll::-webkit-scrollbar{width:10px;height:10px}
+.scroll::-webkit-scrollbar-thumb{background:#414f5d;border:2px solid #182027;border-radius:10px}
+.treeWrap{padding:10px}
+.groupCard{border:1px solid var(--groupBorder);border-radius:11px;margin-bottom:11px;background:linear-gradient(180deg,var(--groupBg),rgba(0,0,0,.10));overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.groupHeader{display:grid;grid-template-columns:24px 1fr auto;align-items:center;min-height:45px;padding:7px 11px;cursor:pointer;font-size:15px;font-weight:900}
+.groupHeader:hover{background:rgba(255,255,255,.025)}
+.groupHeader.brown{color:#edc18b}.groupHeader.blue{color:#9bc1f5}.groupHeader.white{color:#f1f3f6}
+.groupBody{padding:5px 9px 9px}
+.treeRow{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;min-height:31px;padding:4px 7px;border-radius:6px;cursor:pointer}
+.treeRow:hover{background:rgba(255,255,255,.045)}
+.treeRow.active{background:rgba(255,255,255,.075)}
+.treeRow.cat{font-weight:750;margin-top:2px}
+.treeRow.sub{padding-left:28px;color:#c7ced6}
+.treeRow.sub.active{color:#fff;background:rgba(255,255,255,.075)}
+.treeRow.brownCat{color:#d4a46d}.treeRow.blueCat{color:#8db5ec}.treeRow.whiteCat{color:#e3e7ed}
+.chev{color:#aeb8c1}.count{font-size:11px;color:#909ca7}
+.searchZone{padding:10px 11px 9px;border-bottom:1px solid #2a3540;background:#11171c}
+.actionRow{display:grid;grid-template-columns:minmax(220px,1fr) 128px 128px 128px;gap:8px}
+.searchWrap{position:relative}
+.searchWrap input{width:100%;height:38px;color:var(--text);background:#0c1217;border:1px solid #3b4957;border-radius:9px;padding:0 38px 0 12px;outline:none}
+.searchWrap input:focus{border-color:#789dcc;box-shadow:0 0 0 2px rgba(83,133,194,.10)}
+.searchClear{position:absolute;right:6px;top:5px;width:28px;height:28px;padding:0;border:0;background:transparent;color:#9ba7b1;border-radius:6px;font-size:18px;display:none}
+.searchClear:hover{background:#26313b;color:#fff}
+.tierBar{display:none;align-items:center;gap:7px;margin-top:9px;min-height:34px;flex-wrap:wrap}
+.tierBar.visible{display:flex}
+.tierLabel{font-size:11px;color:#8f9aa5;margin-right:2px;text-transform:uppercase;letter-spacing:.05em}
+.tierChip{height:28px;min-width:38px;padding:0 10px;border-radius:7px;border:1px solid #495665;background:#202831;color:#bdc7d0}
+.tierChip:hover{border-color:#77889a}.tierChip.active{background:linear-gradient(180deg,#8a6136,#65451f);border-color:#d0a05f;color:#ffe4b6;box-shadow:0 0 12px rgba(180,126,61,.12)}
+.contextTitle{display:none;margin-top:8px;color:#cbd3da;font-weight:700}.contextTitle.visible{display:block}
+.itemRow{display:grid;grid-template-columns:30px minmax(0,1fr) 58px;align-items:center;gap:8px;min-height:37px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.035);cursor:pointer;border-left:3px solid transparent}
+.itemRow:hover{background:#202933}.itemRow.selected{background:#293541;border-left-color:#8fb4da}.itemRow.ignored{background:linear-gradient(90deg,rgba(78,207,178,.15),rgba(78,207,178,.025));border-left-color:var(--teal)}
+.itemRow input,.modalCheck{appearance:none;width:18px;height:18px;border-radius:5px;border:2px solid #657381;background:#0d1419;display:grid;place-content:center;cursor:pointer}
+.itemRow input:checked,.modalCheck:checked{background:var(--teal);border-color:var(--teal);box-shadow:0 0 10px rgba(78,207,178,.18)}
+.itemRow input:checked:after,.modalCheck:checked:after{content:"✓";color:#08231c;font-size:12px;font-weight:900}
+.itemMain{display:flex;gap:6px;align-items:baseline;min-width:0;white-space:nowrap;overflow:hidden}
+.itemName{font-weight:700;overflow:hidden;text-overflow:ellipsis}.internal{color:#84919d;font-size:11px;overflow:hidden;text-overflow:ellipsis}.tier{font-size:11px;color:#aab5bf;text-align:right}
+.detail{padding:15px;display:flex;flex-direction:column;gap:12px}
+.itemImage{height:190px;border:1px solid #43505e;border-radius:11px;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.05),transparent 27%),linear-gradient(180deg,#1b232b,#10161c);display:grid;place-items:center;color:#788591;text-align:center;font-size:12px;overflow:hidden}
+.detail h2{font-family:Georgia,"Times New Roman",serif;margin:0;font-size:22px;line-height:1.08}
+.categoryTag{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:5px 9px;border:1px solid #5c6874;background:#202830;border-radius:99px;font-size:11px;font-weight:750;color:#d8dee4}
+.footer{display:flex;align-items:center;gap:10px;padding:0 14px;border-top:1px solid #353f49;background:#0f1419}
+.counter{color:#9ed2ff;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.hint{color:#dfbd70;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:47%}
+.modalBackdrop{position:fixed;inset:0;background:rgba(3,5,8,.78);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:30}.modalBackdrop.open{display:flex}
+.modal{width:min(780px,90vw);max-height:78vh;background:linear-gradient(180deg,#1a222a,#10161c);border:1px solid #6e5638;border-radius:14px;box-shadow:0 28px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.035);display:flex;flex-direction:column;overflow:hidden}
+.modalHead{height:58px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid #43392d;background:linear-gradient(180deg,rgba(107,75,43,.22),rgba(30,25,20,.16))}
+.modalHead h3{font-family:Georgia,"Times New Roman",serif;margin:0;color:#ecc68f;font-size:19px}
+.modalClose{width:94px;height:34px}
+.modalBody{overflow:auto;padding:10px}
+.modalRow{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:42px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.045);border-radius:7px}
+.modalRow:hover{background:rgba(255,255,255,.035)}
+.modalTier{color:#9ca8b2;font-size:11px}.empty{padding:30px;color:#84919b;text-align:center}
+.toast{position:fixed;right:18px;bottom:78px;padding:11px 15px;border-radius:9px;background:#172129;border:1px solid #4a6477;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s;z-index:40}.toast.show{opacity:1;transform:none}
+.loading{position:fixed;inset:0;background:rgba(5,7,10,.78);backdrop-filter:blur(3px);display:grid;place-items:center;z-index:50}.loading.hidden{display:none}.loaderCard{padding:20px 26px;border:1px solid #4a5866;border-radius:12px;background:#121920;box-shadow:var(--shadow);color:#d5dee5}
+.testOnly{}
+@media(max-width:1230px){.workspace{grid-template-columns:320px 1fr}.details{display:none}.actionRow{grid-template-columns:minmax(200px,1fr) 118px 118px 118px}}
+
+/* Preview 0.7 refinements */
+.leftTopAction{
+  padding:10px 10px 0;
+}
+.ignoredLauncher{
+  width:100%;
+  height:40px;
+  display:grid;
+  grid-template-columns:24px 1fr 18px;
+  align-items:center;
+  text-align:left;
+  padding:0 11px;
+  color:#f1c98f;
+  border-color:#8b6238;
+  background:linear-gradient(180deg,rgba(126,82,42,.38),rgba(66,44,25,.38));
+}
+.ignoredLauncher:hover{
+  border-color:#c28d50;
+  background:linear-gradient(180deg,rgba(145,94,47,.48),rgba(76,50,28,.46));
+}
+.ignoredIcon{font-size:15px}
+.ignoredCountText{font-weight:800}
+.ignoredArrow{text-align:right;color:#d3ab77}
+.leftItemsFooter{
+  min-height:28px;
+  padding:5px 12px 7px;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  color:#86939f;
+  font-size:11px;
+}
+.leftBlankZone{
+  flex:1;
+  min-height:22px;
+}
+.middleTop{
+  display:grid;
+  grid-template-columns:minmax(260px,1fr) 150px;
+  gap:8px;
+}
+.contextActions{
+  display:none;
+  grid-template-columns:minmax(0,1fr) 150px 150px;
+  gap:8px;
+  align-items:center;
+  margin-top:9px;
+}
+.contextActions.visible{display:grid}
+.contextLeft{
+  display:flex;
+  min-width:0;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:7px;
+}
+.showModeBtn{width:150px}
+.showIgnoredBtn{width:150px}
+.modalClose{
+  width:72px !important;
+  min-width:72px;
+  height:30px !important;
+  padding:0 9px;
+  font-size:12px;
+}
+.modalBody::-webkit-scrollbar{width:10px}
+.modalBody::-webkit-scrollbar-track{
+  background:#0f151b;
+  border-left:1px solid rgba(255,255,255,.03);
+}
+.modalBody::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#8b643a,#664728);
+  border:2px solid #141a20;
+  border-radius:10px;
+}
+.modalBody::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#a77a47,#795532);
+}
+.footerHint{
+  flex:1;
+  min-width:0;
+  color:#dfbd70;
+  font-size:11px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.footer .counter{display:none}
+.panel.leftPanel{position:relative}
+.treeBlankCatch{
+  position:absolute;
+  inset:auto 0 0 0;
+  height:24px;
+  cursor:default;
+}
+
+.statusNotice{
+ display:none;
+ margin:8px 12px 0;
+ padding:9px 11px;
+ border-radius:8px;
+ font-size:11px;
+ border:1px solid #6c552f;
+ background:rgba(104,74,38,.20);
+ color:#e6c487;
+}
+.statusNotice.visible{display:block}
+.statusNotice.error{
+ border-color:#8f4848;
+ background:rgba(119,47,47,.20);
+ color:#e59a9a;
+}
+.statusNotice.good{
+ border-color:#426f5c;
+ background:rgba(48,102,78,.18);
+ color:#99d0b8;
+}
+
+.slotBtn{
+  width:150px;
+  background:linear-gradient(180deg,rgba(126,88,44,.82),rgba(76,51,28,.88));
+  border-color:#a87843;
+  color:#f1d2a4;
+}
+.slotBtn:hover{border-color:#d0a163}
+.slotModal{width:min(900px,92vw)}
+.slotList{display:flex;flex-direction:column;gap:8px}
+.slotRow{
+  display:grid;
+  grid-template-columns:minmax(150px,1fr) 140px 84px 92px 110px 84px;
+  gap:8px;
+  align-items:center;
+  padding:9px;
+  border:1px solid #3c4651;
+  border-radius:9px;
+  background:linear-gradient(180deg,#1b232b,#151b21);
+}
+.slotName{min-width:0}
+.slotName strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slotMetaBtn{
+  width:140px;height:32px;padding:0 9px;
+  border-color:#6c5638;
+  background:linear-gradient(180deg,rgba(110,78,43,.28),rgba(68,47,28,.30));
+  color:#e7c18a;
+  font-size:11px;
+}
+.slotAction{height:32px;padding:0 9px;font-size:11px}
+.slotLoad{width:84px}
+.slotSave{width:92px}
+.slotRename{width:110px}
+.slotClear{width:84px;background:linear-gradient(180deg,rgba(126,58,61,.60),rgba(76,37,39,.66));border-color:#965256}
+.slotHint{
+  margin-top:10px;padding:10px 11px;border:1px solid #4b4032;border-radius:8px;
+  background:rgba(91,65,38,.15);color:#cdb58f;font-size:11px
+}
+.previewBack{
+  margin-right:8px;
+  width:92px;height:30px;padding:0 8px;font-size:11px
+}
+@media(max-width:1050px){
+  .slotRow{grid-template-columns:1fr 120px 80px 88px}
+  .slotRename,.slotClear{grid-column:auto}
+}
+
+#slotModal{z-index:30}
+#modal{z-index:40}
+#slotModal .modal{position:relative}
+#modal .modal{position:relative}
+
+.dialogModal{width:min(460px,92vw)}
+.dialogBody{padding:16px 18px 18px}
+.dialogText{font-size:14px;line-height:1.5;color:#d8dde4;margin-bottom:14px}
+.dialogInput{
+ width:100%;height:38px;border-radius:9px;border:1px solid #52606f;
+ background:#0d141b;color:#e8eef6;padding:0 12px;font-size:14px;outline:none
+}
+.dialogInput:focus{border-color:#c89b5d; box-shadow:0 0 0 1px rgba(200,155,93,.35)}
+.dialogActions{
+ display:flex;justify-content:flex-end;gap:10px;
+ border-top:1px solid rgba(255,255,255,.06);padding:12px 16px 14px
+}
+.dialogBtn{
+ min-width:96px;height:36px;padding:0 14px;border-radius:10px;
+ border:1px solid #59687b;background:linear-gradient(180deg,#253242,#1d2732);
+ color:#eef4fa;font-weight:700;cursor:pointer
+}
+.dialogBtn:hover{border-color:#7a8ea6}
+.dialogBtnPrimary{
+ border-color:#c89b5d;
+ background:linear-gradient(180deg,rgba(117,84,42,.95),rgba(82,58,29,.95));
+ color:#f7e1bc
+}
+.dialogBtnDanger{
+ border-color:#a45d62;
+ background:linear-gradient(180deg,rgba(108,53,58,.95),rgba(80,39,43,.95));
+ color:#f6d8db
+}
+
+.aboutModal{width:min(560px,92vw)}
+.aboutBody{padding:18px}
+.aboutTitle{font-size:22px;font-weight:800;color:#f0d2a3;margin-bottom:2px}
+.aboutVersion{font-size:12px;color:#9ca7b3;margin-bottom:16px}
+.aboutLead{font-size:13px;line-height:1.55;color:#d8dde4;margin-bottom:16px}
+.aboutCard{
+  border:1px solid #3f4a56;border-radius:9px;background:linear-gradient(180deg,#192129,#141a20);
+  padding:12px 13px;margin-top:9px
+}
+.aboutCard b{color:#f0d2a3}
+.aboutLabel{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#8e9aa7;margin-bottom:3px}
+.aboutValue{font-size:13px;color:#e5eaf0}
+.aboutNote{margin-top:15px;font-size:11px;line-height:1.5;color:#88939f}
+
+.aboutLink{
+  color:#f0d2a3;
+  text-decoration:none;
+  font-weight:800;
+  border-bottom:1px solid rgba(240,210,163,.45);
+}
+.aboutLink:hover{color:#fff0d5;border-bottom-color:#fff0d5}
+</style>
+
+
+</head>
+<body>
+<div class="app">
+ <header class="top">
+  <div class="logo">
+   <div class="logoMark">AL</div>
+   <div>
+    <div class="brand">Auto Loot Plus <b>Filter Companion</b></div>
+    <div class="sub">Große Filter vorbereiten · Auto Loot Plus bleibt die Filter-Engine</div>
+   </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="topActions">
+   <button id="aboutBtn" class="langBtn" title="About">About</button>
+      <button id="langDe" class="langBtn active">Deutsch</button>
+   <button id="langEn" class="langBtn">English</button>
+  </div>
+ </header>
+
+ <div class="pathbar">
+  <div class="path" id="path">Auto Loot Plus wird gesucht ...</div>
+  <div class="statusChip" id="statusChip">nicht geladen</div>
+  <button id="loadItemsBrowser" class="btnTest testOnly">items.txt laden</button>
+  <button id="loadConfigBrowser" class="btnTest testOnly">config.txt laden</button>
+  <button id="choose" class="btnChoose">Ordner wählen</button>
+  <button id="reload" class="btnReload">Neu laden</button>
+  <input id="itemsFile" type="file" accept=".txt,text/plain" hidden>
+  <input id="configFile" type="file" accept=".txt,text/plain" hidden>
+ </div>
+
+ <main class="workspace">
+  <section class="panel leftPanel" id="leftPanel">
+   <div class="leftTopAction">
+    <button id="ignoredLauncher" class="ignoredLauncher">
+     <span class="ignoredIcon">◉</span>
+     <span class="ignoredCountText" id="ignoredLauncherText">0 ignorierte Items</span>
+     <span class="ignoredArrow">›</span>
+    </button>
+   </div>
+   <div class="scroll" id="tree"></div>
+   <div class="leftItemsFooter" id="itemCount">0 Items</div>
+  </section>
+
+  <section class="panel">
+   <div class="searchZone">
+    <div class="middleTop">
+     <div class="searchWrap">
+      <input id="search" placeholder="Items global durchsuchen ...">
+      <button id="searchClear" class="searchClear" title="Suche löschen">×</button>
+     </div>
+     <button id="showAllBtn" class="showModeBtn">Alles anzeigen</button>
+    </div>
+    <div class="contextTitle" id="contextTitle"></div>
+    <div class="contextActions" id="contextActions">
+     <div class="contextLeft">
+      <span class="tierLabel" id="tierLabel">Tiers</span>
+      <div class="tierBar visible" id="tierBar"></div>
+     </div>
+     <button id="checkVisible" class="showModeBtn">Alle wählen</button>
+     <button id="uncheckVisible" class="showModeBtn">Alle abwählen</button>
+    </div>
+   </div>
+   <div class="statusNotice" id="statusNotice"></div>
+   <div class="scroll" id="items"></div>
+  </section>
+
+  <section class="panel details">
+   <div class="ph">ITEM-DETAILS</div>
+   <div class="detail" id="details"><span style="color:var(--muted)">Wähle ein Item aus.</span></div>
+  </section>
+ </main>
+
+ <footer class="footer">
+  <div class="footerHint" id="plantHint">Hinweis: Ignorierte Pflanzen-/Busch-Erträge können dazu führen, dass die ganze Pflanze nicht automatisch geerntet wird.</div>
+  <div class="spacer"></div>
+  <button id="reset" class="btnReset">Alles zurücksetzen</button>
+  <button id="filterSlots" class="slotBtn">Filter Profiles</button>
+  <button id="save" class="btnSave" disabled>In config.txt speichern</button>
+  <button id="exportConfig" class="btnExport testOnly">gepatchte config.txt exportieren</button>
+ </footer>
+</div>
+
+<div class="loading" id="loading"><div class="loaderCard">Auto Loot Plus-Daten werden geladen ...</div></div>
+<div class="toast" id="toast"></div>
+<div class="modalBackdrop" id="modal">
+ <div class="modal">
+  <div class="modalHead"><h3 id="modalTitle">Ignorierte Items</h3><div class="spacer"></div><button id="modalClose" class="modalClose">Schließen</button></div>
+  <div class="modalBody" id="modalBody"></div>
+ </div>
+</div>
+
+<div class="modalBackdrop" id="slotModal">
+ <div class="modal slotModal">
+  <div class="modalHead">
+   <h3 id="slotModalTitle">Filter Profiles</h3>
+   <div class="spacer"></div>
+   <button id="slotModalClose" class="modalClose">Schließen</button>
+  </div>
+  <div class="modalBody">
+   <div class="slotList" id="slotList"></div>
+   <div class="slotHint" id="slotHint">
+    Slots speichern nur die Filterauswahl. Erst „In config.txt speichern“ übernimmt die geladene Auswahl in Auto Loot Plus.
+   </div>
+  </div>
+ </div>
+</div>
+
+
+<div class="modalBackdrop" id="dialogModal">
+ <div class="modal dialogModal">
+  <div class="modalHead">
+   <h3 id="dialogTitle">Bestätigung</h3>
+   <div class="spacer"></div>
+   <button id="dialogClose" class="modalClose">Schließen</button>
+  </div>
+  <div class="dialogBody">
+   <div id="dialogText" class="dialogText"></div>
+   <input id="dialogInput" class="dialogInput" style="display:none" />
+  </div>
+  <div class="dialogActions">
+   <button id="dialogCancel" class="dialogBtn">Abbrechen</button>
+   <button id="dialogOk" class="dialogBtn dialogBtnPrimary">OK</button>
+  </div>
+ </div>
+</div>
+
+
+<div class="modalBackdrop" id="aboutModal">
+ <div class="modal aboutModal">
+  <div class="modalHead">
+   <h3>About</h3>
+   <div class="spacer"></div>
+   <button id="aboutClose" class="modalClose">Close</button>
+  </div>
+  <div class="aboutBody">
+   <div class="aboutTitle">Auto Loot Plus Filter Companion</div>
+   <div class="aboutVersion">Version 1.0</div>
+
+   <div class="aboutLead">
+    A companion tool for Auto Loot Plus for Enshrouded. It manages item filters using the current items.txt generated by Auto Loot Plus and writes only the ignoreItems setting to its config.
+   </div>
+
+   <div class="aboutCard">
+    <div class="aboutLabel">Created by</div>
+    <div class="aboutValue"><a class="aboutLink" href="https://www.nexusmods.com/profile/faytleingod84">faytleingod84</a></div>
+   </div>
+
+   <div class="aboutCard">
+    <div class="aboutLabel">Technical assistance</div>
+    <div class="aboutValue"><b>ChatGPT / OpenAI</b></div>
+   </div>
+
+   <div class="aboutCard">
+    <div class="aboutLabel">Auto Loot Plus</div>
+    <div class="aboutValue">Original mod by <a class="aboutLink" href="https://www.nexusmods.com/enshrouded/users/60416816">Dellemann</a></div>
+   </div>
+
+   <div class="aboutNote">
+    This is an independent companion tool for Auto Loot Plus and is not affiliated with Keen Games.
+   </div>
+  </div>
+ </div>
+</div>
+
+<script>
+const bridge = window.chrome?.webview;
+let items=[], selected=new Set(), scope={g:null,c:null,s:null,t:null}, current=null, ignoredOnly=false, showAllMode=false, slots=[];
+const openGroups=new Set(), openCats=new Set();
+
+const langState={value:'de'};
+const lang=()=>langState.value;
+const uiText={
+ de:{search:'Items global durchsuchen ...', onlyIgnored:'Nur ignorierte', allItems:'Alle anzeigen', choose:'Ordner wählen', reload:'Neu laden', loadItems:'items.txt laden', loadConfig:'config.txt laden', exportConfig:'gepatchte config.txt exportieren', reset:'Alles zurücksetzen', save:'In config.txt speichern', ignored:'Items ignoriert', ignoredButton:'ignorierte Items', showAll:'Alles anzeigen', selectAll:'Alle wählen', deselectAll:'Alle abwählen', tiers:'Tiers', plantHint:'Hinweis: Ignorierte Pflanzen-/Busch-Erträge können dazu führen, dass die ganze Pflanze nicht automatisch geerntet wird.', slots:'Filter Profiles', load:'Laden', saveSlot:'Speichern', rename:'Umbenennen', clear:'Leeren', close:'Schließen', slotHint:'Slots speichern nur die Filterauswahl. Erst „In config.txt speichern“ übernimmt die geladene Auswahl in Auto Loot Plus.', slotPreview:'Slot-Vorschau', detailsEmpty:'Wähle ein Item aus.', noImage:'Noch kein Itembild\nimplementiert', browserHelp:'Browser-Test:', browserHelp2:'Lade deine echte items.txt und config.txt. Dann kannst du die komplette Itemstruktur und Ignore-Auswahl mit realen Daten testen.'},
+ en:{search:'Search items globally ...', onlyIgnored:'Ignored only', allItems:'Show all', choose:'Choose folder', reload:'Reload', loadItems:'Load items.txt', loadConfig:'Load config.txt', exportConfig:'Export patched config.txt', reset:'Reset all', save:'Save to config.txt', ignored:'items ignored', ignoredButton:'ignored items', showAll:'Show all', selectAll:'Select all', deselectAll:'Deselect all', tiers:'Tiers', plantHint:'Note: Ignored plant/bush yields may cause the entire plant not to be harvested automatically.', slots:'Filter Profiles', load:'Load', saveSlot:'Save', rename:'Rename', clear:'Clear', close:'Close', slotHint:'Slots only store the filter selection. Only “Save to config.txt” applies a loaded slot to Auto Loot Plus.', slotPreview:'Slot preview', detailsEmpty:'Select an item.', noImage:'No item image\nimplemented yet', browserHelp:'Browser test:', browserHelp2:'Load your real items.txt and config.txt to test the full item tree and ignore selections with real data.'}
+};
+const translateMap = {
+  "Ressourcen & Verbrauch":"Resources & Consumables",
+  "Ausrüstung":"Equipment",
+  "Verschiedenes":"Miscellaneous",
+  "Materialien":"Materials",
+  "Munition":"Ammunition",
+  "Nahrung":"Food",
+  "Verbrauchsgegenstände":"Consumables",
+  "Rüstungen":"Armor",
+  "Waffen":"Weapons",
+  "Bauteile & Möbel":"Building Parts & Furniture",
+  "Quest- & Spezialitems":"Quest & Special Items",
+  "Werkzeuge":"Tools",
+  "Knochen & Monsterteile":"Bones & Monster Parts",
+  "Erze & Mineralien":"Ores & Minerals",
+  "Holz & Holzprodukte":"Wood & Wood Products",
+  "Pflanzen & Kräuter":"Plants & Herbs",
+  "Verschiedenes Material":"Misc Materials",
+  "Pfeile & Munition":"Arrows & Ammunition",
+  "Nahrung & Zutaten":"Food & Ingredients",
+  "Tränke":"Potions",
+  "Köder":"Bait",
+  "Rüstung":"Armor",
+  "Schilde":"Shields",
+  "Ringe":"Rings",
+  "Waffenedelsteine":"Weapon Gems",
+  "Terrain & Baublöcke":"Terrain & Building Blocks",
+  "Sammelstücke":"Collectibles",
+  "Schlüssel":"Keys",
+  "Farbpaletten":"Color Palettes",
+  "Instrumente":"Instruments",
+  "Ohne Tier":"No Tier"
+};
+const label=s=> lang()==='de' ? s : (translateMap[s] || s);
+const name=i=>lang()==='de'?(i.de||i.en||i.internal):(i.en||i.de||i.internal);
+const alt=i=>lang()==='de'?(i.en||''):(i.de||'');
+const esc=s=>(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function post(type,extra={}){ if(bridge) bridge.postMessage({type,...extra}); }
+function toast(s){const t=document.getElementById('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+
+function treeData(){
+ const m={};
+ for(const i of items){
+   m[i.group]??={}; m[i.group][i.category]??={}; m[i.group][i.category][i.subcategory]??={};
+   m[i.group][i.category][i.subcategory][i.tier]=(m[i.group][i.category][i.subcategory][i.tier]||0)+1;
+ }
+ return m;
+}
+function sum(o){return Object.values(o).reduce((a,v)=>a+(typeof v==='number'?v:sum(v)),0)}
+function treeRow(level,text,count,active,open,klass,click){
+ const d=document.createElement('div'); d.className=`treeRow l${level} ${active?'active ':''}${klass||''}`;
+ d.innerHTML=`<span class="chev">${level<3?(open?'▾':'›'):'·'}</span><span>${esc(text)}</span><span class="count">${count}</span>`;
+ d.onclick=click; return d;
+}
+
+function groupStyle(group){
+ if(group==='Ressourcen & Verbrauch') return {card:'--groupBorder:#7b5738;--groupBg:rgba(112,75,45,.16)', head:'brown', cat:'brownCat'};
+ if(group==='Ausrüstung') return {card:'--groupBorder:#416d9f;--groupBg:rgba(44,79,127,.16)', head:'blue', cat:'blueCat'};
+ return {card:'--groupBorder:#7e848c;--groupBg:rgba(118,124,133,.11)', head:'white', cat:'whiteCat'};
+}
+function renderTree(){
+ const root=document.getElementById('tree'), old=root.scrollTop; root.innerHTML='';
+ if(!items.length){root.innerHTML='<div class="empty">items.txt laden, um die echte Filterstruktur aufzubauen.</div>';return;}
+ const wrap=document.createElement('div'); wrap.className='treeWrap';
+ const m=treeData();
+
+ for(const g of ['Ressourcen & Verbrauch','Ausrüstung','Verschiedenes']){
+   if(!m[g])continue;
+   const st=groupStyle(g), go=openGroups.has(g);
+   const card=document.createElement('div');card.className='groupCard';card.style.cssText=st.card;
+
+   const head=document.createElement('div');head.className=`groupHeader ${st.head}`;
+   head.innerHTML=`<span class="chev">${go?'▾':'›'}</span><span>${esc(label(g))}</span><span class="count">${sum(m[g])}</span>`;
+   head.onclick=()=>{showAllMode=false;ignoredOnly=false;go?openGroups.delete(g):openGroups.add(g);scope={g,c:null,s:null,t:null};render();};
+   card.appendChild(head);
+
+   if(go){
+     const body=document.createElement('div');body.className='groupBody';
+     for(const c of Object.keys(m[g]).sort((a,b)=>label(a).localeCompare(label(b),lang()))){
+       const ck=g+'|'+c, co=openCats.has(ck);
+       const cat=document.createElement('div');cat.className=`treeRow cat ${st.cat} ${scope.g===g&&scope.c===c&&!scope.s?'active':''}`;
+       cat.innerHTML=`<span class="chev">${co?'▾':'›'}</span><span>${esc(label(c))}</span><span class="count">${sum(m[g][c])}</span>`;
+       cat.onclick=()=>{showAllMode=false;ignoredOnly=false;co?openCats.delete(ck):openCats.add(ck);scope={g,c,s:null,t:null};render();};
+       body.appendChild(cat);
+
+       if(co){
+         for(const s of Object.keys(m[g][c]).sort((a,b)=>label(a).localeCompare(label(b),lang()))){
+           const sub=document.createElement('div');sub.className=`treeRow sub ${scope.g===g&&scope.c===c&&scope.s===s?'active':''}`;
+           sub.innerHTML=`<span class="chev">›</span><span>${esc(label(s))}</span><span class="count">${sum(m[g][c][s])}</span>`;
+           sub.onclick=()=>{showAllMode=false;ignoredOnly=false;scope={g,c,s,t:null};render();};
+           body.appendChild(sub);
+         }
+       }
+     }
+     card.appendChild(body);
+   }
+   wrap.appendChild(card);
+ }
+ root.appendChild(wrap);root.scrollTop=old;
+}
+
+function renderTierBar(){
+ const bar=document.getElementById('tierBar');
+ const title=document.getElementById('contextTitle');
+ const actions=document.getElementById('contextActions');
+
+ bar.innerHTML='';
+ title.classList.remove('visible');
+ title.textContent='';
+ actions.classList.remove('visible');
+
+ if(!scope.s)return;
+
+ const scoped=items.filter(i=>i.group===scope.g&&i.category===scope.c&&i.subcategory===scope.s);
+ const tiers=[...new Set(scoped.map(i=>i.tier))].sort((a,b)=>{
+   if(a==='Ohne Tier')return 1;if(b==='Ohne Tier')return -1;
+   return parseInt(a.slice(1))-parseInt(b.slice(1));
+ });
+
+ title.textContent=`${label(scope.s)} · ${scoped.length} Items`;
+ title.classList.add('visible');
+ actions.classList.add('visible');
+
+ const all=document.createElement('button');
+ all.className='tierChip '+(!scope.t?'active':'');
+ all.textContent=lang()==='de'?'Alle':'All';
+ all.onclick=()=>{scope.t=null;renderTierBar();renderItems();};
+ bar.appendChild(all);
+
+ for(const t of tiers){
+   const b=document.createElement('button');
+   b.className='tierChip '+(scope.t===t?'active':'');
+   b.textContent=label(t);
+   b.onclick=()=>{scope.t=t;renderTierBar();renderItems();};
+   bar.appendChild(b);
+ }
+}
+
+function visible(){
+ const q=document.getElementById('search').value.trim().toLowerCase();
+
+ return items.filter(i=>{
+   const matchesSearch=!q||[i.internal,i.de,i.en,i.gameCategory,i.f8Group].some(x=>(x||'').toLowerCase().includes(q));
+
+   let matchesScope=false;
+   if(q){
+     matchesScope=true;
+   }else if(showAllMode){
+     matchesScope=true;
+   }else if(scope.s){
+     matchesScope=
+       i.group===scope.g &&
+       i.category===scope.c &&
+       i.subcategory===scope.s &&
+       (!scope.t||i.tier===scope.t);
+   }else{
+     matchesScope=false;
+   }
+
+   return matchesSearch && matchesScope && (!ignoredOnly||selected.has(i.internal));
+ }).sort((a,b)=>name(a).localeCompare(name(b),lang()));
+}
+function renderItems(){
+ const box=document.getElementById('items'); box.innerHTML='';
+ if(!items.length){box.innerHTML='<div class="empty">Noch keine items.txt geladen.</div>';return;}
+ const vis=visible();
+ if(!vis.length && !document.getElementById('search').value.trim() && !showAllMode && !scope.s){
+   box.innerHTML=`<div class="empty">${lang()==='de'?'Wähle links eine Unterkategorie oder nutze „Alles anzeigen“.':'Choose a subcategory on the left or use “Show all”.'}</div>`;
+   return;
+ }
+ for(const i of vis){
+  const d=document.createElement('div'); d.className='itemRow'+(current===i.internal?' selected':'')+(selected.has(i.internal)?' ignored':'');
+  d.innerHTML=`<input type="checkbox" ${selected.has(i.internal)?'checked':''}><div class="itemMain"><span class="itemName">${esc(name(i))}</span><span class="internal">(${esc(i.internal)})</span></div><div class="tier">${esc(label(i.tier))}</div>`;
+  const cb=d.querySelector('input'); cb.onclick=e=>e.stopPropagation(); cb.onchange=e=>{e.target.checked?selected.add(i.internal):selected.delete(i.internal);d.classList.toggle('ignored',e.target.checked);updateCounter()};
+  d.onclick=()=>{current=i.internal;renderItems();renderDetails()}; box.appendChild(d);
+ }
+}
+
+function renderDetails(){
+ const d=document.getElementById('details'),i=items.find(x=>x.internal===current);
+ if(!i){d.innerHTML=`<span style="color:var(--muted)">${uiText[lang()].detailsEmpty}</span>`;return}
+ d.innerHTML=`
+   <div class="itemImage">${uiText[lang()].noImage.replace('\n','<br>')}</div>
+   <h2>${esc(name(i))}</h2>
+   <span class="categoryTag">${esc(label(i.category))}</span>
+ `;
+}
+
+function updateCounter(){
+ document.getElementById('ignoredLauncherText').textContent=`${selected.size} ${uiText[lang()].ignoredButton}`;
+ document.getElementById('itemCount').textContent=`${items.length} Items`;
+}
+
+
+const dialogState={resolve:null,mode:'confirm'};
+
+function openDialog({title,text,mode='confirm',value='',okText='OK',cancelText='Abbrechen',danger=false}){
+ return new Promise(resolve=>{
+   dialogState.resolve=resolve;
+   dialogState.mode=mode;
+
+   const modal=document.getElementById('dialogModal');
+   document.getElementById('dialogTitle').textContent=title;
+   document.getElementById('dialogText').textContent=text;
+   document.getElementById('dialogClose').textContent=lang()==='de'?'Schließen':'Close';
+   document.getElementById('dialogCancel').textContent=cancelText;
+   const ok=document.getElementById('dialogOk');
+   ok.textContent=okText;
+   ok.className='dialogBtn '+(danger?'dialogBtnDanger':'dialogBtnPrimary');
+
+   const input=document.getElementById('dialogInput');
+   if(mode==='prompt'){
+     input.style.display='';
+     input.value=value||'';
+     setTimeout(()=>{input.focus();input.select();},0);
+   }else{
+     input.style.display='none';
+     input.value='';
+   }
+
+   modal.classList.add('open');
+ });
+}
+function closeDialog(result){
+ const modal=document.getElementById('dialogModal');
+ modal.classList.remove('open');
+ const fn=dialogState.resolve;
+ dialogState.resolve=null;
+ if(fn) fn(result);
+}
+async function appConfirm(title,text,{okText=null,cancelText=null,danger=false}={}){
+ return await openDialog({
+   title,text,mode:'confirm',
+   okText:okText || 'OK',
+   cancelText:cancelText || (lang()==='de'?'Abbrechen':'Cancel'),
+   danger
+ });
+}
+async function appPrompt(title,text,initial=''){
+ return await openDialog({
+   title,text,mode:'prompt',value:initial,
+   okText:lang()==='de'?'Speichern':'Save',
+   cancelText:lang()==='de'?'Abbrechen':'Cancel'
+ });
+}
+
+function setStatusNotice(message,type=''){
+ const el=document.getElementById('statusNotice');
+ if(!message){el.textContent='';el.className='statusNotice';return}
+ el.textContent=message;
+ el.className='statusNotice visible'+(type?' '+type:'');
+}
+function setSaveEnabled(enabled){
+ const btn=document.getElementById('save');
+ btn.disabled=!enabled;
+}
+
+function render(){renderTree();renderTierBar();renderItems();renderDetails();updateCounter();updateSearchClear()}
+
+function ensureBrowserSlots(){
+ if(slots.length)return;
+ slots=Array.from({length:5},(_,i)=>({index:i+1,name:`Slot ${i+1}`,items:[]}));
+}
+function persistBrowserSlots(){
+ try{ window.__browserSlots = JSON.parse(JSON.stringify(slots)); }catch{}
+}
+function renderSlots(){
+ ensureBrowserSlots();
+ const box=document.getElementById('slotList');
+ box.innerHTML='';
+
+ for(const slot of slots){
+   const row=document.createElement('div');
+   row.className='slotRow';
+   const validItems=(slot.items||[]).filter(internal=>items.some(i=>i.internal===internal));
+   row.innerHTML=`
+     <div class="slotName"><strong>${esc(slot.name||`Slot ${slot.index}`)}</strong><span class="internal">Slot ${slot.index}</span></div>
+     <button class="slotMetaBtn" data-preview>${validItems.length} ${lang()==='de'?'ignorierte Items':'ignored items'}</button>
+     <button class="slotAction slotLoad" data-load>${uiText[lang()].load}</button>
+     <button class="slotAction slotSave" data-save>${uiText[lang()].saveSlot}</button>
+     <button class="slotAction slotRename" data-rename>${uiText[lang()].rename}</button>
+     <button class="slotAction slotClear" data-clear>${uiText[lang()].clear}</button>
+   `;
+
+   row.querySelector('[data-preview]').onclick=()=>openSlotPreview(slot);
+   row.querySelector('[data-load]').onclick=()=>{
+      selected=new Set(validItems);
+      document.getElementById('slotModal').classList.remove('open');
+      renderItems();updateCounter();
+      toast(lang()==='de'?`${slot.name} geladen ✓`:`${slot.name} loaded ✓`);
+   };
+   row.querySelector('[data-save]').onclick=()=>{
+      const chosen=[...selected];
+      if(bridge){
+        post('saveSlot',{index:slot.index,name:slot.name,selected:chosen});
+      }else{
+        slot.items=chosen;persistBrowserSlots();renderSlots();
+      }
+      toast(lang()==='de'?`Aktuelle Auswahl in ${slot.name} gespeichert ✓`:`Current selection saved to ${slot.name} ✓`);
+   };
+   row.querySelector('[data-rename]').onclick=async ()=>{
+      const next=await appPrompt(
+        lang()==='de'?'Profil umbenennen':'Rename profile',
+        lang()==='de'?'Bitte einen neuen Namen für dieses Profil eingeben:':'Please enter a new name for this profile:',
+        slot.name||`Slot ${slot.index}`
+      );
+      if(next===null)return;
+      const clean=String(next).trim(); if(!clean)return;
+      if(bridge) post('renameSlot',{index:slot.index,name:clean});
+      else{slot.name=clean;persistBrowserSlots();renderSlots();}
+   };
+   row.querySelector('[data-clear]').onclick=async ()=>{
+      const yes=await appConfirm(
+        lang()==='de'?'Profil leeren':'Clear profile',
+        lang()==='de'?`Slot „${slot.name}“ wirklich leeren?`:`Really clear slot “${slot.name}”?`,
+        {okText:lang()==='de'?'Leeren':'Clear', cancelText:lang()==='de'?'Abbrechen':'Cancel', danger:true}
+      );
+      if(!yes)return;
+      if(bridge) post('clearSlot',{index:slot.index});
+      else{slot.name=`Slot ${slot.index}`;slot.items=[];persistBrowserSlots();renderSlots();}
+   };
+   box.appendChild(row);
+ }
+}
+function openSlots(){
+ if(bridge)post('getSlots');
+ else{
+   if(window.__browserSlots)slots=JSON.parse(JSON.stringify(window.__browserSlots));
+   ensureBrowserSlots();
+ }
+ renderSlots();
+ document.getElementById('slotModalTitle').textContent=uiText[lang()].slots;
+ document.getElementById('slotHint').textContent=uiText[lang()].slotHint;
+ document.getElementById('slotModalClose').textContent=uiText[lang()].close;
+ document.getElementById('slotModal').classList.add('open');
+}
+function openSlotPreview(slot){
+ const body=document.getElementById('modalBody');body.innerHTML='';
+ const slotItems=(slot.items||[])
+   .map(internal=>items.find(i=>i.internal===internal))
+   .filter(Boolean)
+   .sort((a,b)=>name(a).localeCompare(name(b),lang()));
+
+ document.getElementById('modalTitle').textContent=`${uiText[lang()].slotPreview}: ${slot.name}`;
+ if(!slotItems.length) body.innerHTML=`<div class="empty">${lang()==='de'?'Keine ignorierten Items in diesem Slot.':'No ignored items in this slot.'}</div>`;
+
+ for(const i of slotItems){
+   const r=document.createElement('div');
+   r.className='modalRow';
+   r.innerHTML=`<span></span><span><b>${esc(name(i))}</b><br><span class="internal">${esc(i.internal)}</span></span><span class="modalTier">${esc(label(i.tier))}</span>`;
+   body.appendChild(r);
+ }
+ document.getElementById('modal').dataset.mode='slotPreview';
+ document.getElementById('modal').classList.add('open');
+ document.getElementById('slotModal').classList.add('open');
+}
+
+function openModal(){
+ document.getElementById('modal').dataset.mode='current';
+ const body=document.getElementById('modalBody');body.innerHTML='';
+ document.getElementById('modalTitle').textContent=lang()==='de'?`${selected.size} ignorierte Items`:`${selected.size} ignored items`;
+ const arr=items.filter(i=>selected.has(i.internal)).sort((a,b)=>name(a).localeCompare(name(b),lang()));
+ if(!arr.length)body.innerHTML=`<div class="empty">${lang()==='de'?'Keine Items ignoriert.':'No ignored items.'}</div>`;
+ for(const i of arr){
+   const r=document.createElement('label');r.className='modalRow';
+   r.innerHTML=`<input class="modalCheck" type="checkbox" checked><span><b>${esc(name(i))}</b><br><span class="internal">${esc(i.internal)}</span></span><span class="modalTier">${esc(label(i.tier))}</span>`;
+   r.querySelector('input').onchange=e=>{e.target.checked?selected.add(i.internal):selected.delete(i.internal);r.style.opacity=e.target.checked?'1':'.42';updateCounter()};
+   body.appendChild(r)
+ }
+ document.getElementById('modal').classList.add('open')
+}
+
+
+let browserConfigText='', browserConfigName='config.txt', browserConfigHadBom=false, browserConfigNewline='\n', browserPreserved=[];
+
+function classifyBrowser(internalName, gameCategory, f8){
+ const n=(internalName||'').toLowerCase();
+ let cat,sub;
+ if(f8==='Materials'){
+   cat='Materialien';
+   if(/bone|gland|critter|fur|feather|tooth|teeth|claw|horn|scale|shell|insect|animal|monster|bat|spider/.test(n)) sub='Knochen & Monsterteile';
+   else if(/ore|metal|iron|copper|tin|bronze|coal|salt|sulfur|sulphur|flint|stone|gem|crystal|amber|obsidian|lapis|mineral/.test(n)) sub='Erze & Mineralien';
+   else if(/wood|log|branch|twig|bark|charcoal|plank/.test(n)) sub='Holz & Holzprodukte';
+   else if(/plant|flower|herb|fiber|mushroom|berry|seed|reed|straw|wheat|moss|root|leaf|leaves/.test(n)) sub='Pflanzen & Kräuter';
+   else sub='Verschiedenes Material';
+ } else if(f8==='Ammunition'){cat='Munition';sub='Pfeile & Munition'}
+ else if(f8==='Food'){cat='Nahrung';sub='Nahrung & Zutaten'}
+ else if(f8==='Potions'||f8==='Bait'){cat='Verbrauchsgegenstände';sub=f8==='Potions'?'Tränke':'Köder'}
+ else if(['Armor','Vanity','Shields','Rings'].includes(f8)){cat='Rüstungen';sub={Armor:'Rüstung',Vanity:'Vanity',Shields:'Schilde',Rings:'Ringe'}[f8]}
+ else if(['Weapons','WeaponGem'].includes(f8)){cat='Waffen';sub=f8==='Weapons'?'Waffen':'Waffenedelsteine'}
+ else if(f8==='Terrain'){cat='Bauteile & Möbel';sub='Terrain & Baublöcke'}
+ else if(['Collectibles','Keys','ColorPalette'].includes(f8)){cat='Quest- & Spezialitems';sub={Collectibles:'Sammelstücke',Keys:'Schlüssel',ColorPalette:'Farbpaletten'}[f8]}
+ else if(f8==='Tools'){cat='Werkzeuge';sub='Werkzeuge'}
+ else if(f8==='Instrument'){cat='Verschiedenes';sub='Instrumente'}
+ else {cat='Verschiedenes';sub=f8||gameCategory||'Nicht zugeordnet'}
+ const group=['Materialien','Munition','Nahrung','Verbrauchsgegenstände'].includes(cat)?'Ressourcen & Verbrauch':(['Rüstungen','Waffen'].includes(cat)?'Ausrüstung':'Verschiedenes');
+ return {group,category:cat,subcategory:sub};
+}
+function stripMarkup(s){return (s||'').replace(/<[^>]+>/g,'').trim()}
+function parseItemsTxt(text){
+ const out=[];
+ for(const line of text.split(/\r?\n/)){
+   if(!line.trim()||line.startsWith('#'))continue;
+   const p=line.split('\t'); if(p.length<9||p[4]!=='1')continue;
+   const internal=p[1], c=classifyBrowser(internal,p[5],p[6]);
+   const tm=internal.match(/(?:^|_)T([1-7])(?:_|$)/i);
+   out.push({id:p[0],internal,en:stripMarkup(p[2]),de:stripMarkup(p[3]),gameCategory:p[5],f8Group:p[6],guid:p[7],stack:p[8],...c,tier:tm?'T'+tm[1]:'Ohne Tier'});
+ }
+ return out;
+}
+function parseConfigTxt(text){
+ browserConfigText=text;
+ browserConfigNewline=text.includes('\r\n')?'\r\n':'\n';
+ const m=text.match(/^ignoreItems=(.*)$/m), raw=m?m[1].replace(/\r$/,''):'';
+ selected.clear(); browserPreserved=[];
+ for(const tok0 of raw.split(',')){
+   const tok=tok0.trim(); if(!tok)continue;
+   if(tok.startsWith('=')&&tok.length>1)selected.add(tok.slice(1)); else browserPreserved.push(tok);
+ }
+}
+function makePatchedConfig(){
+ const exact=[...selected].sort().map(x=>'='+x);
+ const replacement='ignoreItems='+[...browserPreserved,...exact].join(',');
+ if(/^ignoreItems=.*$/m.test(browserConfigText)) return browserConfigText.replace(/^ignoreItems=.*$/m,replacement);
+ let t=browserConfigText;
+ if(t && !t.endsWith('\n'))t+=browserConfigNewline;
+ return t+replacement+browserConfigNewline;
+}
+function downloadText(filename,text){
+ const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},0);
+}
+
+
+document.getElementById('loadItemsBrowser').onclick=()=>document.getElementById('itemsFile').click();
+document.getElementById('loadConfigBrowser').onclick=()=>document.getElementById('configFile').click();
+
+document.getElementById('itemsFile').onchange=async e=>{
+ const f=e.target.files?.[0]; if(!f)return;
+ try{
+   const text=await f.text();
+   items=parseItemsTxt(text);
+   scope={g:null,c:null,s:null,t:null}; current=null; showAllMode=false; ignoredOnly=false;
+   openGroups.clear();openCats.clear();
+   openGroups.add('Ressourcen & Verbrauch');openGroups.add('Ausrüstung');openGroups.add('Verschiedenes');
+   document.getElementById('path').textContent='Browser-Test · '+f.name;
+   document.getElementById('statusChip').textContent=`${items.length} echte Items`;
+   document.getElementById('loading').classList.add('hidden');
+   applyLanguageUI();render();toast(`${items.length} filterbare Items aus items.txt geladen ✓`);
+ }catch(err){toast('items.txt konnte nicht gelesen werden: '+err.message)}
+};
+document.getElementById('configFile').onchange=async e=>{
+ const f=e.target.files?.[0]; if(!f)return;
+ try{
+   const text=await f.text(); browserConfigName=f.name||'config.txt';parseConfigTxt(text);
+   renderItems();updateCounter();toast(`${selected.size} Ignore-Einträge aus config.txt geladen ✓`);
+ }catch(err){toast('config.txt konnte nicht gelesen werden: '+err.message)}
+};
+document.getElementById('exportConfig').onclick=()=>{
+ if(!browserConfigText){toast('Zuerst config.txt laden.');return}
+ downloadText('config.patched.txt',makePatchedConfig());toast('Gepatchte config.txt wurde exportiert ✓');
+};
+
+
+
+function applyLanguageUI(){
+ document.getElementById('search').placeholder=uiText[lang()].search;
+ document.getElementById('choose').textContent=uiText[lang()].choose;
+ document.getElementById('reload').textContent=uiText[lang()].reload;
+ document.getElementById('loadItemsBrowser').textContent=uiText[lang()].loadItems;
+ document.getElementById('loadConfigBrowser').textContent=uiText[lang()].loadConfig;
+ document.getElementById('exportConfig').textContent=uiText[lang()].exportConfig;
+ document.getElementById('reset').textContent=uiText[lang()].reset;
+ document.getElementById('save').textContent=uiText[lang()].save;
+ document.getElementById('showAllBtn').textContent=uiText[lang()].showAll;
+ document.getElementById('checkVisible').textContent=uiText[lang()].selectAll;
+ document.getElementById('uncheckVisible').textContent=uiText[lang()].deselectAll;
+ document.getElementById('tierLabel').textContent=uiText[lang()].tiers;
+ document.getElementById('plantHint').textContent=uiText[lang()].plantHint;
+ document.getElementById('filterSlots').textContent=uiText[lang()].slots;
+ document.getElementById('slotModalTitle').textContent=uiText[lang()].slots;
+ document.getElementById('slotModalClose').textContent=uiText[lang()].close;
+ document.getElementById('slotHint').textContent=uiText[lang()].slotHint;
+ document.getElementById('modalClose').textContent=lang()==='de'?'Schließen':'Close';
+  document.getElementById('langDe').classList.toggle('active',lang()==='de');
+ document.getElementById('langEn').classList.toggle('active',lang()==='en');
+ render();
+}
+document.getElementById('langDe').onclick=()=>{langState.value='de';applyLanguageUI();};
+document.getElementById('langEn').onclick=()=>{langState.value='en';applyLanguageUI();};
+
+function updateSearchClear(){
+ const q=document.getElementById('search').value;
+ document.getElementById('searchClear').style.display=q?'block':'none';
+}
+document.getElementById('search').oninput=()=>{updateSearchClear();renderItems()};
+
+document.getElementById('tree').addEventListener('click',e=>{
+ if(e.target===e.currentTarget || e.target.classList.contains('treeWrap')){
+   showAllMode=false; ignoredOnly=false;
+   scope={g:null,c:null,s:null,t:null};
+   render();
+ }
+});
+
+document.getElementById('searchClear').onclick=()=>{document.getElementById('search').value='';updateSearchClear();renderItems();document.getElementById('search').focus()};
+
+document.getElementById('showAllBtn').onclick=()=>{
+ showAllMode=true; ignoredOnly=false; scope={g:null,c:null,s:null,t:null};
+ document.getElementById('search').value='';updateSearchClear();render();
+};
+document.getElementById('ignoredLauncher').onclick=openModal;
+document.getElementById('filterSlots').onclick=openSlots;
+document.getElementById('slotModalClose').onclick=()=>document.getElementById('slotModal').classList.remove('open');
+document.getElementById('slotModal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
+document.getElementById('dialogClose').onclick=()=>closeDialog(dialogState.mode==='prompt'?null:false);
+document.getElementById('dialogCancel').onclick=()=>closeDialog(dialogState.mode==='prompt'?null:false);
+document.getElementById('dialogOk').onclick=()=>{
+ const val = dialogState.mode==='prompt' ? document.getElementById('dialogInput').value : true;
+ closeDialog(val);
+};
+document.getElementById('dialogInput').addEventListener('keydown',e=>{
+ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('dialogOk').click(); }
+ if(e.key==='Escape'){ e.preventDefault(); closeDialog(null); }
+});
+document.getElementById('dialogModal').onclick=e=>{
+ if(e.target===e.currentTarget) closeDialog(dialogState.mode==='prompt'?null:false);
+};
+
+
+
+document.getElementById('checkVisible').onclick=()=>{visible().forEach(i=>selected.add(i.internal));renderItems();updateCounter()};
+document.getElementById('uncheckVisible').onclick=()=>{visible().forEach(i=>selected.delete(i.internal));renderItems();updateCounter()};
+document.getElementById('reset').onclick=async ()=>{
+ const ok = await appConfirm(
+   lang()==='de'?'Auswahl zurücksetzen':'Reset selection',
+   lang()==='de'?'Alle Ignore-Auswahlen wirklich entfernen?':'Remove all ignore selections?',
+   {okText:lang()==='de'?'Zurücksetzen':'Reset', cancelText:lang()==='de'?'Abbrechen':'Cancel', danger:true}
+ );
+ if(!ok)return;
+ selected.clear(); renderItems(); updateCounter(); renderDetails();
+ toast(lang()==='de'?'Auswahl zurückgesetzt':'Selection reset');
+};
+document.getElementById('modalClose').onclick=()=>{
+ const modal=document.getElementById('modal');
+ const mode=modal.dataset.mode||'current';
+ modal.classList.remove('open');
+ if(mode==='current') renderItems();
+};
+document.getElementById('modal').onclick=e=>{
+ if(e.target===e.currentTarget){
+   const mode=e.currentTarget.dataset.mode||'current';
+   e.currentTarget.classList.remove('open');
+   if(mode==='current') renderItems();
+ }
+};
+document.getElementById('choose').onclick=()=>post('chooseFolder');
+document.getElementById('reload').onclick=()=>post('reload');
+document.getElementById('path').ondblclick=()=>post('revealRoot');
+document.getElementById('save').onclick=()=>post('save',{selected:[...selected]});
+
+if(bridge){
+ document.querySelectorAll('.testOnly').forEach(el=>el.style.display='none');
+ document.querySelector('.app').style.gridTemplateRows='108px 56px 1fr 66px';
+ bridge.addEventListener('message',e=>{
+  const m=e.data;
+  if(m.type==='state'){
+    document.getElementById('loading').classList.add('hidden');
+    const chip=document.getElementById('statusChip');
+
+    if(!m.found){
+      document.getElementById('path').textContent=m.gameRoot||'Auto Loot Plus nicht gefunden';
+      chip.textContent='nicht geladen';
+      setSaveEnabled(false);
+      setStatusNotice(m.error||'Auto Loot Plus wurde nicht gefunden.','error');
+      items=[];selected.clear();ensureBrowserSlots();applyLanguageUI();render();return;
+    }
+
+    document.getElementById('path').textContent=m.gameRoot;
+    chip.textContent=`${m.itemCount ?? m.items.length} Items geladen`;
+    items=m.items; selected=new Set(m.selected||[]);
+    applyLanguageUI();render();
+
+    const canSave=!m.gameRunning && m.configWritable;
+    setSaveEnabled(canSave);
+
+    if(m.gameRunning){
+      setStatusNotice(lang()==='de'?'Enshrouded läuft - Speichern ist gesperrt.':'Enshrouded is running - saving is locked.','error');
+    }else if(!m.configWritable){
+      setStatusNotice(lang()==='de'?'config.txt ist nicht beschreibbar.':'config.txt is not writable.','error');
+    }else if((m.staleExactCount||0)>0){
+      setStatusNotice(
+        lang()==='de'
+          ? `${m.staleExactCount} alte Ignore-Einträge existieren nicht mehr in der aktuellen items.txt und werden beim nächsten Speichern entfernt.`
+          : `${m.staleExactCount} old ignore entries no longer exist in the current items.txt and will be removed on the next save.`,
+        ''
+      );
+    }else{
+      setStatusNotice('');
+    }
+
+    if((m.preservedRuleCount||0)>0)
+      toast(`${m.preservedRuleCount} freie Filterregel(n) werden unverändert bewahrt`);
+  } else if(m.type==='slots'){
+    slots=m.slots||[];
+    renderSlots();
+  } else if(m.type==='gameProcess'){
+    if(m.running){
+      setSaveEnabled(false);
+      setStatusNotice(lang()==='de'?'Enshrouded läuft - Speichern ist gesperrt.':'Enshrouded is running - saving is locked.','error');
+    }else{
+      setSaveEnabled(true);
+      setStatusNotice('');
+      toast(m.message);
+    }
+  } else if(m.type==='saveResult'){
+    toast(m.message+(m.ok?' ✓':''));
+    if(m.ok) post('reload');
+  } else if(m.type==='error'){toast('Fehler: '+m.message)}
+ });
+ post('ready');
+}else{
+ document.getElementById('loading').classList.add('hidden');
+ document.getElementById('path').textContent='Browser-Test · bitte echte items.txt und config.txt laden';
+ document.getElementById('statusChip').textContent='bereit für echte Daten';
+ document.getElementById('save').style.display='none';setStatusNotice('');
+ items=[];selected.clear();applyLanguageUI();render();
+}
+
+document.getElementById('aboutBtn').addEventListener('click',()=>document.getElementById('aboutModal').classList.add('open'));
+document.getElementById('aboutClose').addEventListener('click',()=>document.getElementById('aboutModal').classList.remove('open'));
+document.getElementById('aboutModal').addEventListener('click',e=>{
+ if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');
+});
+
+document.querySelectorAll('.aboutLink').forEach(link=>{
+ link.addEventListener('click',e=>{
+   if(window.chrome?.webview){
+     e.preventDefault();
+     window.chrome.webview.postMessage(JSON.stringify({type:'openUrl',url:link.href}));
+   }else{
+     link.target='_blank';
+     link.rel='noopener noreferrer';
+   }
+ });
+});
+</script>
+</body>
+</html>
